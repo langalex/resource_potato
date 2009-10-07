@@ -18,6 +18,9 @@ module ResourcePotato::ControllerExtension
       
       def new
         self.object = object_class.new
+        if(before = new_action_config.before)
+          instance_eval &before
+        end
       end
 
       def create
@@ -61,7 +64,7 @@ module ResourcePotato::ControllerExtension
     module Helpers
       private
       
-      [:update, :create, :destroy].each do |method|
+      [:update, :create, :destroy, :new_action].each do |method|
         define_method "#{method}_config" do
           unless instance_variable_get("@#{method}_config")
             instance_variable_set("@#{method}_config", ::ResourcePotato::ActionConfig.new)
@@ -130,6 +133,10 @@ module ResourcePotato::ControllerExtension
       def destroy(&block)
         @destroy_config ||= block
       end
+
+      def new_action(&block)
+        @new_action_config ||= block
+      end
     end
 
     class BindingContainer
@@ -140,11 +147,11 @@ module ResourcePotato::ControllerExtension
         self.controller = controller
       end
       
-      def method_missing(name, *args)
+      def method_missing(name, *args, &block)
         if config.respond_to?(name)
-          config.send name, *args
+          config.send name, *args, &block
         elsif controller.respond_to?(name)
-          controller.send name, *args
+          controller.send name, *args, &block
         else
           super
         end

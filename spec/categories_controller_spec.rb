@@ -7,6 +7,12 @@ module Admin
   class CategoriesController < ApplicationController
     resource_potato
     
+    new_action do
+      before do
+        @category.user_id = params[:user_id]
+      end
+    end
+    
     update do
       config.redirect = admin_categories_path
     end
@@ -36,13 +42,19 @@ end
 describe "resource_potato", :type => :controller do
   before(:each) do
     CouchPotato.stub!(:database => stub.as_null_object)
+    @category = stub('category').as_null_object
+    Category.stub!(:new => @category)
   end
   
   describe Admin::CategoriesController, 'new' do
     it "should assign a new category" do
-      Category.stub!(:new => :category)
       get :new
-      assigns(:category).should == :category
+      assigns(:category).should == @category
+    end
+    
+    it "should run the before block" do
+      @category.should_receive(:user_id=).with('1')
+      get :new, :user_id => '1'
     end
   end
 
