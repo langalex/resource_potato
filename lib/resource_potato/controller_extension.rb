@@ -23,7 +23,7 @@ module ResourcePotato::ControllerExtension
       def create
         self.object = object_class.new(params[object_name])
         if db.save object
-          flash[:success] = "#{object_name.humanize} created."
+          flash[:success] = create_config.flash || "#{object_name.humanize} created."
           redirect_to create_config.redirect || url_for_show
         else
           render 'new'
@@ -43,7 +43,7 @@ module ResourcePotato::ControllerExtension
         self.object = db.load(params[:id])
         object.attributes = params[object_name]
         if db.save object
-          flash[:success] = "#{object_name.humanize} updated."
+          flash[:success] = update_config.flash || "#{object_name.humanize} updated."
           redirect_to update_config.redirect || url_for_show
         else
           render 'edit'
@@ -53,7 +53,7 @@ module ResourcePotato::ControllerExtension
       def destroy
         self.object = db.load params[:id]
         db.destroy object
-        flash[:success] = "#{object_name.humanize} deleted."
+        flash[:success] = destroy_config.flash || "#{object_name.humanize} deleted."
         redirect_to url_for_index
       end
 
@@ -61,24 +61,16 @@ module ResourcePotato::ControllerExtension
     module Helpers
       private
       
-      def update_config
-        unless @update_config
-          @update_config = ::ResourcePotato::ActionConfig.new
-          if(block = self.class.update)
-            BindingContainer.new(self, @update_config).instance_eval &block
+      [:update, :create, :destroy].each do |method|
+        define_method "#{method}_config" do
+          unless instance_variable_get("@#{method}_config")
+            instance_variable_set("@#{method}_config", ::ResourcePotato::ActionConfig.new)
+            if(block = self.class.send(method))
+              BindingContainer.new(self, instance_variable_get("@#{method}_config")).instance_eval &block
+            end
           end
+          instance_variable_get("@#{method}_config")
         end
-        @update_config
-      end
-      
-      def create_config
-        unless @create_config
-          @create_config = ::ResourcePotato::ActionConfig.new
-          if(block = self.class.create)
-            BindingContainer.new(self, @create_config).instance_eval &block
-          end
-        end
-        @create_config
       end
       
       def object_name
@@ -133,6 +125,10 @@ module ResourcePotato::ControllerExtension
       
       def create(&block)
         @create_config ||= block
+      end
+      
+      def destroy(&block)
+        @destroy_config ||= block
       end
     end
 

@@ -13,6 +13,7 @@ module Admin
 
     create do
       config.redirect = admin_categories_path
+      config.flash = 'successfully created'
     end
 
     private
@@ -72,6 +73,12 @@ describe "resource_potato", :type => :controller do
       post :create
       response.should redirect_to(admin_categories_path)
     end
+    
+    it "should set the flash" do
+      CouchPotato.database.stub!(:save => true)
+      post :create
+      flash[:success].should == 'successfully created'
+    end
 
     it "should render new if save fails" do
       CouchPotato.database.stub!(:save => false)
@@ -104,6 +111,12 @@ describe "resource_potato", :type => :controller do
     it "should save the category" do
       CouchPotato.database.should_receive(:save).with(@category)
       put :update, :id => '1'
+    end
+    
+    it "should set the flash" do
+      CouchPotato.database.stub!(:save => true)
+      put :update, :id => '1'
+      flash[:success].should == 'Category updated.'
     end
 
     it "should render edit if save fails" do

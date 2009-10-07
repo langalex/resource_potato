@@ -1,5 +1,5 @@
 module ResourcePotato
   class ActionConfig
-    attr_accessor :redirect
+    attr_accessor :redirect, :flash
   end
 end
