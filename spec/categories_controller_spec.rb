@@ -7,19 +7,43 @@ module Admin
   class CategoriesController < ApplicationController
     resource_potato
     
+    index do
+      before do
+        @callback = params[:callback]
+      end
+    end
+    
     new_action do
       before do
         @category.user_id = params[:user_id]
       end
     end
     
+    edit do
+      before do
+        @category.parent_id = params[:parent_id]
+      end
+    end
+    
     update do
+      before do
+        @category.updated_by = params[:updater]
+      end
       config.redirect = admin_categories_path
     end
 
     create do
+      before do
+        @category.created_by = params[:creator]
+      end
       config.redirect = admin_categories_path
       config.flash = 'successfully created'
+    end
+    
+    destroy do
+      before do
+        @category.destroyed_by = params[:destroyer]
+      end
     end
 
     private
@@ -52,7 +76,7 @@ describe "resource_potato", :type => :controller do
       assigns(:category).should == @category
     end
     
-    it "should run the before block" do
+    it "should run the before callback" do
       @category.should_receive(:user_id=).with('1')
       get :new, :user_id => '1'
     end
@@ -60,7 +84,7 @@ describe "resource_potato", :type => :controller do
 
   describe Admin::CategoriesController, 'create' do
     before(:each) do
-      @category = stub 'category'
+      @category = stub('category').as_null_object
       Category.stub!(:new => @category)
       CouchPotato.database.stub!(:save => true)
     end
@@ -73,6 +97,11 @@ describe "resource_potato", :type => :controller do
     it "should assign the category" do
       post :create
       assigns(:category).should == @category
+    end
+    
+    it "should run the before callback" do
+      @category.should_receive(:created_by=).with('horst')
+      post :create, :creator => 'horst'
     end
 
     it "should save the category" do
@@ -108,6 +137,11 @@ describe "resource_potato", :type => :controller do
     it "should load the category" do
       CouchPotato.database.should_receive(:load).with('23')
       put :update, :id => '23'
+    end
+    
+    it "should run the before callback" do
+      @category.should_receive(:updated_by=).with('heinz')
+      put :update, :id => '23', :updater => 'heinz'
     end
 
     it "should assign the attributes to the category" do
@@ -145,11 +179,19 @@ describe "resource_potato", :type => :controller do
   end
 
   describe Admin::CategoriesController, 'index' do
-    it "should assign all categories" do
+    before(:each) do
       Category.stub!(:by_name => :view_by_name)
+    end
+    
+    it "should assign all categories" do
       CouchPotato.database.stub!(:view).with(:view_by_name).and_return(:categories)
       get :index
       assigns(:categories).should == :categories
+    end
+    
+    it "should run the before callback" do
+      get :index, :callback => 'true'
+      assigns(:callback).should == 'true'
     end
   end
 
@@ -162,6 +204,11 @@ describe "resource_potato", :type => :controller do
     it "should load the category" do
       CouchPotato.database.should_receive(:load).with('23')
       delete :destroy, :id => '23'
+    end
+    
+    it "should run the before callback" do
+      @category.should_receive(:destroyed_by=).with('franz')
+      delete :destroy, :id => '23', :destroyer => 'franz'
     end
 
     it "should destroy the category" do
@@ -177,16 +224,24 @@ describe "resource_potato", :type => :controller do
   end
 
   describe Admin::CategoriesController, 'edit' do
+    before(:each) do
+      @category = stub('category').as_null_object
+      CouchPotato.database.stub!(:load => @category)
+    end
 
     it "should load the category" do
-      CouchPotato.database.should_receive(:load).with('23')
+      CouchPotato.database.should_receive(:load).with('23').and_return(@category)
       get :edit, :id => '23'
     end
 
     it "should assign the category" do
-      CouchPotato.database.stub!(:load => :category)
       get :edit, :id => '23'
-      assigns(:category).should == :category
+      assigns(:category).should == @category
+    end
+    
+    it "should run the before callback" do
+      @category.should_receive(:user_id=).with('123')
+      get :edit, :id => '23', :user_id => '123'
     end
   end
 end
