@@ -24,7 +24,7 @@ module ResourcePotato
 
     def edit
       self.object =  db.load(params[:id])
-      run_callback(new_action_config, :before)
+      run_callback(edit_config, :before)
     end
     
     def show

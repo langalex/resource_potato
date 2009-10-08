@@ -240,8 +240,8 @@ describe "resource_potato", :type => :controller do
     end
     
     it "should run the before callback" do
-      @category.should_receive(:user_id=).with('123')
-      get :edit, :id => '23', :user_id => '123'
+      @category.should_receive(:parent_id=).with('123')
+      get :edit, :id => '23', :parent_id => '123'
     end
   end
 end
