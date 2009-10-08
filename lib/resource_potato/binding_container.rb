@@ -10,7 +10,7 @@ module ResourcePotato
     def method_missing(name, *args, &block)
       if config.respond_to?(name)
         config.send name, *args, &block
-      elsif controller.respond_to?(name)
+      elsif controller.respond_to?(name) || controller.private_methods.include?(name.to_s)
         controller.send name, *args, &block
       else
         super
