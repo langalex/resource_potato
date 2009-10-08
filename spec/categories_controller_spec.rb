@@ -3,6 +3,22 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 class Category
 end
 
+class CategoriesController < ApplicationController
+  resource_potato
+  
+  destroy do
+    config.redirect = "/after_destroy"
+  end
+  
+  update do
+    config.redirect = '/after_update'
+  end
+  
+  create do
+    config.redirect = '/after_create'
+  end
+end
+
 module Admin
   class CategoriesController < ApplicationController
     resource_potato
@@ -29,14 +45,12 @@ module Admin
       before do
         @category.updated_by = params[:updater]
       end
-      config.redirect = admin_categories_path
     end
 
     create do
       before do
         @category.created_by = params[:creator]
       end
-      config.redirect = admin_categories_path
       config.flash = 'successfully created'
     end
     
@@ -61,6 +75,8 @@ ActionController::Routing::Routes.draw do |map|
   map.namespace 'admin' do |admin|
     admin.resources :categories
   end
+  
+  map.resources :categories
 end
 
 describe "resource_potato", :type => :controller do
@@ -109,10 +125,10 @@ describe "resource_potato", :type => :controller do
       post :create
     end
 
-    it "should redirect to the categories index if save succeeds" do
+    it "should redirect to show if save succeeds" do
       CouchPotato.database.stub!(:save => true)
       post :create
-      response.should redirect_to(admin_categories_path)
+      response.should redirect_to(admin_category_path(@category))
     end
     
     it "should set the flash" do
@@ -125,6 +141,14 @@ describe "resource_potato", :type => :controller do
       CouchPotato.database.stub!(:save => false)
       post :create
       response.should render_template(:new)
+    end
+  end
+  
+  describe CategoriesController, 'create' do
+    it "should redirect to the configured path" do
+      CouchPotato.database.stub!(:save => true)
+      post :create
+      response.should redirect_to('/after_create')
     end
   end
 
@@ -171,10 +195,18 @@ describe "resource_potato", :type => :controller do
       response.should render_template(:edit)
     end
 
-    it "should redirect to index if save succeeds" do
+    it "should redirect to show if save succeeds" do
       CouchPotato.database.stub!(:save => true)
       put :update, :id => '1'
-      response.should redirect_to(admin_categories_path)
+      response.should redirect_to(admin_category_path(@category))
+    end
+  end
+  
+  describe CategoriesController, 'update' do
+    it "should redirect to the configured path" do
+      CouchPotato.database.stub!(:save => true)
+      put :update, :id => '1'
+      response.should redirect_to('/after_update')
     end
   end
 
@@ -220,7 +252,13 @@ describe "resource_potato", :type => :controller do
       delete :destroy, :id => '23'
       response.should redirect_to(admin_categories_path)
     end
-
+  end
+  
+  describe CategoriesController, 'destroy' do
+    it "should redirect to the configured path" do
+      delete :destroy, :id => '23'
+      response.should redirect_to('/after_destroy')
+    end
   end
 
   describe Admin::CategoriesController, 'edit' do

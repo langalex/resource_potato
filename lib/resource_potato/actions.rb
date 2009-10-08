@@ -49,7 +49,7 @@ module ResourcePotato
       run_callback(destroy_config, :before)
       db.destroy object
       flash[:success] = destroy_config.flash || "#{object_name.humanize} deleted."
-      redirect_to url_for_index
+      redirect_to destroy_config.redirect || url_for_index
     end
     
     private
