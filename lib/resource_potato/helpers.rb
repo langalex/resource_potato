@@ -2,7 +2,7 @@ module ResourcePotato
   module Helpers
     private
     
-    [:index, :new_action, :create, :edit, :update, :destroy].each do |method|
+    [:index, :new_action, :create, :edit, :update, :show, :destroy].each do |method|
       define_method "#{method}_config" do
         unless instance_variable_get("@#{method}_config")
           instance_variable_set("@#{method}_config", ::ResourcePotato::ActionConfig.new)

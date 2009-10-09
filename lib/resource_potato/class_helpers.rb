@@ -19,6 +19,10 @@ module ResourcePotato
     def update(&block)
       @update_config ||= block
     end
+    
+    def show(&block)
+      @show_config ||= block
+    end
   
     def destroy(&block)
       @destroy_config ||= block

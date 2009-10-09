@@ -41,6 +41,12 @@ module Admin
       end
     end
     
+    show do
+      before do
+        @category.show = params[:show]
+      end
+    end
+    
     update do
       before do
         @category.updated_by = params[:updater]
@@ -208,6 +214,29 @@ describe "resource_potato", :type => :controller do
       put :update, :id => '1'
       response.should redirect_to('/after_update')
     end
+  end
+
+  describe Admin::CategoriesController, 'show' do
+    before(:each) do
+      @category = stub('category').as_null_object
+      CouchPotato.database.stub!(:load => @category)
+    end
+
+    it "should load the category" do
+      CouchPotato.database.should_receive(:load).with('23').and_return(@category)
+      get :show, :id => '23'
+    end
+
+    it "should assign the category" do
+      get :show, :id => '23'
+      assigns(:category).should == @category
+    end
+    
+    it "should run the before callback" do
+      @category.should_receive(:show=).with('123')
+      get :show, :id => '23', :show => '123'
+    end
+    
   end
 
   describe Admin::CategoriesController, 'index' do
