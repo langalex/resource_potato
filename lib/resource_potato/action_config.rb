@@ -6,5 +6,10 @@ module ResourcePotato
       @before = block if block
       @before
     end
+
+    def failure(*args, &block)
+      @failure = block if block
+      @failure
+    end
   end
 end

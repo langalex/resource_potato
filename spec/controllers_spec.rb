@@ -1,6 +1,8 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
-class Category
+class Category; end
+class Failure
+  def initialize(*args); end
 end
 
 class CategoriesController < ApplicationController
@@ -17,6 +19,23 @@ class CategoriesController < ApplicationController
   create do
     config.redirect = '/after_create'
   end
+end
+
+class FailuresController < ApplicationController
+  resource_potato
+  
+  create do
+    failure do
+      @create_failed = true
+    end
+  end
+  
+  update do
+    failure do
+      @update_failed = true
+    end
+  end
+  
 end
 
 module Admin
@@ -82,7 +101,7 @@ ActionController::Routing::Routes.draw do |map|
     admin.resources :categories
   end
   
-  map.resources :categories
+  map.resources :categories, :failures
 end
 
 describe "resource_potato", :type => :controller do
@@ -91,6 +110,23 @@ describe "resource_potato", :type => :controller do
     @category = stub('category').as_null_object
     Category.stub!(:new => @category)
   end
+  
+  describe FailuresController, 'create' do
+    it "should run the faiure callback on failure" do
+      CouchPotato.database.stub!(:save => false)
+      post :create
+      assigns(:create_failed).should be_true
+    end
+  end
+
+  describe FailuresController, 'update' do
+    it "should run the faiure callback on failure" do
+      CouchPotato.database.stub!(:save => false)
+      post :update, :id => '1'
+      assigns(:update_failed).should be_true
+    end
+  end
+
   
   describe Admin::CategoriesController, 'new' do
     it "should assign a new category" do
@@ -151,7 +187,7 @@ describe "resource_potato", :type => :controller do
   end
   
   describe CategoriesController, 'create' do
-    it "should redirect to the configured path" do
+    it "should redirect to the configured path on success" do
       CouchPotato.database.stub!(:save => true)
       post :create
       response.should redirect_to('/after_create')

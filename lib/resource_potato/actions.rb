@@ -17,7 +17,7 @@ module ResourcePotato
         flash[:success] = create_config.flash || "#{object_name.humanize} created."
         redirect_to create_config.redirect || url_for_show
       else
-        render 'new'
+        run_callback(create_config, :failure) || render('new')
       end
     end
     
@@ -40,7 +40,7 @@ module ResourcePotato
         flash[:success] = update_config.flash || "#{object_name.humanize} updated."
         redirect_to update_config.redirect || url_for_show
       else
-        render 'edit'
+        run_callback(update_config, :failure) || render('edit')
       end
     end
 
@@ -57,6 +57,7 @@ module ResourcePotato
     def run_callback(config, name)
       if(callback = config.send(name))
         instance_eval &callback
+        true
       end
     end
   end
